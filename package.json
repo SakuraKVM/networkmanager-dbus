@@ -1,5 +1,5 @@
 {
-  "name": "@astrohaus/networkmanager-dbus",
+  "name": "@sakurakvm/networkmanager-dbus",
   "version": "2.2.0",
   "description": "A nodejs interface to communicate with NetworkManager via DBus",
   "author": "Bailey Blankenship <bailey.blankenship@dropworks.com>",

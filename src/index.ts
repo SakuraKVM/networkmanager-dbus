@@ -25,6 +25,8 @@ import {
     AccessPointPath,
 } from './dbus-types';
 
+export * from './util';
+
 export {
     NetworkManager,
     AgentManager,
