@@ -25,10 +25,10 @@ export function signal<T extends Array<any> = any[]>(
             observer.next(args);
         };
 
-        objectInterface.on(signalName, listener);
+        objectInterface.on(signalName, listener as any);
         return {
             unsubscribe() {
-                objectInterface.off(signalName, listener);
+                objectInterface.off(signalName, listener as any);
             },
         };
     });
@@ -100,17 +100,12 @@ export async function getAllProperties<TPropetries extends Properties = Properti
     }
 }
 
-export function byteArrayToString(array: number[]): string {
-    return String.fromCharCode.apply(String, array);
+export function byteArrayToString(array: Buffer): string {
+    return array.toString('utf-8');
 }
 
-export function stringToByteArray(input: string): number[] {
-    let byteArray: number[] = [];
-    for (let i = 0; i < input.length; i++) {
-        byteArray[i] = input.charCodeAt(i);
-    }
-
-    return byteArray;
+export function stringToByteArray(input: string): Buffer {
+    return Buffer.from(input);
 }
 
 export function int32ToByteArray(int: number): Uint8Array {
@@ -128,4 +123,14 @@ export function formatIp4Address(ipAddress: number) {
     const byteArray = int32ToByteArray(ipAddress);
 
     return byteArray.reverse().join('.');
+}
+
+export function formatIp6Address(input: Buffer) {
+    return input
+        .toString('hex')
+        .match(/.{1,4}/g)!
+        .map((val) => val.replace(/^0+/, ''))
+        .join(':')
+        .replace(/0000\:/g, ':')
+        .replace(/:{2,}/, '::');
 }

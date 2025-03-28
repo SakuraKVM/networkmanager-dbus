@@ -4,7 +4,7 @@ import { DeepPartial } from 'utility-types';
 import { AgentManager } from './agent-manager';
 import { BaseDevice } from './base-device';
 import { ConnectionSettingsManager } from './connection-settings-manager';
-import { ConnectionProfile, DeviceType, NetworkManagerProperties, Properties } from './dbus-types';
+import { ConnectionProfile, DeviceType, NetworkManagerProperties, Properties, RawDeviceProperties } from './dbus-types';
 import { EthernetDevice } from './ethernet-device';
 import { Signaler } from './signaler';
 import { call, getAllProperties, objectInterface, setProperty } from './util';
@@ -46,6 +46,10 @@ export class NetworkManager extends Signaler {
 
     public get devices(): string[] {
         return this._devicesSubject.value;
+    }
+
+    public get bus() {
+        return this._bus;
     }
 
     private constructor(
@@ -183,7 +187,7 @@ export class NetworkManager extends Signaler {
                 const forLoop = async () => {
                     for (let i = 0; i < allDevicePaths.length; i++) {
                         let device = await this.getDevice(allDevicePaths[i]);
-                        let properties = await getAllProperties(device);
+                        let properties = await getAllProperties<RawDeviceProperties>(device);
 
                         if (properties.DeviceType.value === DeviceType.WIFI) {
                             let wifiDevice = await WifiDevice.init(this._bus, allDevicePaths[i]);
@@ -220,7 +224,7 @@ export class NetworkManager extends Signaler {
                 const forLoop = async () => {
                     for (let i = 0; i < allDevicePaths.length; i++) {
                         let device = await this.getDevice(allDevicePaths[i]);
-                        let properties = await getAllProperties(device);
+                        let properties = await getAllProperties<RawDeviceProperties>(device);
 
                         if (properties.DeviceType.value === DeviceType.ETHERNET) {
                             let ethernetDevice = await EthernetDevice.init(this._bus, allDevicePaths[i]);

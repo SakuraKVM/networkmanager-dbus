@@ -1,6 +1,6 @@
 import DBus from '@astrohaus/dbus-next';
 import { BehaviorSubject } from 'rxjs';
-import { Observable } from 'rxjs/internal/Observable';
+import { Observable } from 'rxjs';
 import { BaseDevice } from './base-device';
 import {
     AccessPointProperties,
@@ -74,7 +74,7 @@ export class WifiDevice extends BaseDevice<WifiDeviceProperties> {
             const initialAccessPoints: AccessPointMap = {};
 
             const getAccessPointDataFromPaths = async () => {
-                const accessPoints = wifiDeviceProperties.AccessPoints.value;
+                const accessPoints = (wifiDeviceProperties as unknown as WifiDeviceProperties).AccessPoints.value as string[];
 
                 for (let i = 0; i < accessPoints.length; i++) {
                     let accessPointPath = accessPoints[i];
@@ -83,8 +83,15 @@ export class WifiDevice extends BaseDevice<WifiDeviceProperties> {
                         accessPointPath,
                         'org.freedesktop.NetworkManager.AccessPoint',
                     );
-                    let accessPointProperties = await getAllProperties(accessPointInterface);
-                    accessPointProperties.Ssid.value = byteArrayToString(accessPointProperties.Ssid.value);
+                    let rawAccessPointProperties = await getAllProperties<RawAccessPointProperties>(accessPointInterface);
+
+                    const accessPointProperties: AccessPointProperties = {
+                        ...rawAccessPointProperties,
+                        Ssid: {
+                            ...rawAccessPointProperties.Ssid,
+                            value: byteArrayToString(rawAccessPointProperties.Ssid.value),
+                        },
+                    };
                     initialAccessPoints[accessPointPath] = accessPointProperties as AccessPointProperties;
                 }
             };

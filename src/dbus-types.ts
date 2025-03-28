@@ -175,6 +175,9 @@ export enum AccessPointSecurityFlags {
     /** @member {number} */
     /** WPA/RSN Opportunistic Wireless Encryption transition mode is supported. Since: 1.26. */
     KEY_MGMT_OWE_TM = 0x00001000,
+    /** @member {number} */
+    /** WPA3 Enterprise Suite-B 192 bit mode is supported. Since: 1.30. */
+    KEY_MGMT_EAP_SUITE_B_192 = 0x00002000,
 }
 
 /**
@@ -609,7 +612,7 @@ export enum DeviceStateReason {
  * A generic type for DBus properties
  */
 export interface Properties {
-    [key: string]: Variant;
+    // [key: string]: Variant<unknown>;
 }
 
 /**
@@ -641,7 +644,7 @@ export interface RawAccessPointProperties extends Properties {
 
     //Returns: NM80211ApSecurityFlags
     /** The Service Set Identifier identifying the access point. */
-    Ssid: Variant<number[]>;
+    Ssid: Variant<Buffer>;
 
     /** The radio channel frequency in use by the access point, in MHz. */
     Frequency: Variant<number>;
@@ -912,7 +915,7 @@ export interface RawDeviceProperties extends Properties {
 /**
  * Processed device properties
  */
-export interface DeviceProperties extends Omit<RawDeviceProperties, 'Ip4Address'> {
+export type DeviceProperties = Omit<RawDeviceProperties, 'Ip4Address'> & {
     /** IPv4 address of the device */
     Ip4Address: Variant<string | null>;
 }
@@ -1000,6 +1003,14 @@ export interface Ip4ConfigProperties extends Properties {
     WinsServers: Variant<number[]>;
     /** The Windows Internet Name Service servers associated with the connection. */
     WinsServerData: Variant<string[]>;
+}
+
+// https://networkmanager.dev/docs/api/latest/gdbus-org.freedesktop.NetworkManager.IP6Config.html
+export interface Ip6ConfigProperties extends Properties {
+    AddressData: Variant<{address: Variant<string>, prefix: Variant<number>}[]>;
+    Gateway: Variant<string>;
+    RouteData: Variant<{dest: Variant<string>, prefix: Variant<number>, 'next-hop'?: Variant<string>, metric: Variant<number>}[]>;
+    NameserverData?: Variant<{address: Variant<string>}[]>;
 }
 
 export type ConnectionProfilePath = string;

@@ -1,8 +1,8 @@
-import DBus from '@astrohaus/dbus-next';
+import DBus, { Variant } from '@astrohaus/dbus-next';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { DeviceProperties, Ip4ConfigProperties, RawDeviceProperties } from './dbus-types';
+import { DeviceProperties, Ip4ConfigProperties, Ip6ConfigProperties, RawDeviceProperties } from './dbus-types';
 import { Signaler } from './signaler';
-import { call, formatIp4Address, getAllProperties, objectInterface } from './util';
+import { call, formatIp4Address, formatIp6Address, getAllProperties, objectInterface } from './util';
 
 /**
  * Abstract class for all NetworkManager devices.
@@ -40,15 +40,25 @@ export abstract class BaseDevice<TProperties extends DeviceProperties = DevicePr
         this._listenForPropertyChanges();
     }
 
+    public get bus() {
+        return this._bus;
+    }
+
     protected static async _init(bus: DBus.MessageBus, devicePath: string, deviceInterfaceName: string) {
         const deviceInterface = await objectInterface(bus, devicePath, 'org.freedesktop.NetworkManager.Device');
         const concreteDeviceInterface = await objectInterface(bus, devicePath, deviceInterfaceName);
         const propertiesInterface = await objectInterface(bus, devicePath, 'org.freedesktop.DBus.Properties');
 
-        const deviceProperties = await getAllProperties(deviceInterface);
-        deviceProperties.Ip4Address.value = formatIp4Address(deviceProperties.Ip4Address.value);
+        const rawDeviceProperties = await getAllProperties<RawDeviceProperties>(deviceInterface);
+        const deviceProperties: DeviceProperties = {
+            ...rawDeviceProperties,
+            Ip4Address: {
+                ...rawDeviceProperties.Ip4Address,
+                value: formatIp4Address(rawDeviceProperties.Ip4Address.value),
+            },
+        };
 
-        const concreteDeviceProperties = await getAllProperties(concreteDeviceInterface);
+        const concreteDeviceProperties = await getAllProperties<RawDeviceProperties>(concreteDeviceInterface);
 
         const initialProperties = { ...deviceProperties, ...concreteDeviceProperties };
 
@@ -85,11 +95,44 @@ export abstract class BaseDevice<TProperties extends DeviceProperties = DevicePr
 
         const ipConfigInterface = await objectInterface(
             this._bus,
-            ipConfigPath,
+            ipConfigPath as string,
             'org.freedesktop.NetworkManager.IP4Config',
         );
 
         const ipConfigProperties = await getAllProperties<Ip4ConfigProperties>(ipConfigInterface);
+
+        return ipConfigProperties;
+    }
+
+    /**
+     * Gets all IP4Config properties.
+     */
+    public async getIp6ConfigProperties(): Promise<Ip6ConfigProperties | undefined> {
+        const ipConfigPath = this.properties.Ip6Config && this.properties.Ip6Config.value;
+
+        if (!ipConfigPath) {
+            return;
+        }
+
+        const ipConfigInterface = await objectInterface(
+            this._bus,
+            ipConfigPath as string,
+            'org.freedesktop.NetworkManager.IP6Config',
+        );
+
+        const ipConfigProperties = await getAllProperties<Ip6ConfigProperties>(ipConfigInterface);
+
+        if (!ipConfigProperties.NameserverData && (ipConfigProperties as any).Nameservers) {
+            ipConfigProperties.NameserverData = {
+                value: ((ipConfigProperties as any).Nameservers as Variant<Buffer[]>).value.map((v) => ({
+                    address: {
+                        signature: 's',
+                        value: formatIp6Address(v),
+                    },
+                })),
+                signature: 'aa{sv}',
+            };
+        }
 
         return ipConfigProperties;
     }
@@ -101,14 +144,18 @@ export abstract class BaseDevice<TProperties extends DeviceProperties = DevicePr
             (propertyChangeInfo) => {
                 const { Ip4Address: changedIpAddress, ...propertyChanges } = propertyChangeInfo[1];
 
-                if (changedIpAddress) {
-                    propertyChanges.Ip4Address = {
-                        ...changedIpAddress,
-                        value: formatIp4Address(changedIpAddress.value),
-                    };
-                }
-
-                this._properties = { ...this._properties, ...propertyChanges };
+                this._properties = {
+                    ...this._properties,
+                    ...propertyChanges,
+                    ...(changedIpAddress
+                        ? {
+                              Ip4Address: {
+                                  ...changedIpAddress,
+                                  value: formatIp4Address(changedIpAddress.value),
+                              },
+                          }
+                        : {}),
+                };
                 this._propertiesSubject.next(this._properties);
             },
         );
