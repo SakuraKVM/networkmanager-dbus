@@ -786,15 +786,47 @@ export interface ConnectionProfile {
         uuid: Variant<string>;
     };
     /** https://developer.gnome.org/NetworkManager/stable/settings-ipv4.html */
-    ipv4: Record<string, Variant<any>>;
+    ipv4: {
+        'address-data'?: Variant<{address: Variant<string>, prefix: Variant<number>}[]>,
+        method: Variant<string>,
+        'route-data'?: Variant<Record<string, Variant<string>>[]>,
+        'dns-data'?: Variant<{address: Variant<string>}[]>,
+        'dns'?: Variant<number[]>,
+        'gateway'?: Variant<string>,
+        'ignore-auto-dns'?: Variant<boolean>,
+        'ignore-auto-routes'?: Variant<boolean>,
+    };
     /** https://developer.gnome.org/NetworkManager/stable/settings-ipv6.html */
-    ipv6: Record<string, Variant<any>>;
+    ipv6: {
+        'address-data'?: Variant<{address: Variant<string>, prefix: Variant<number>}[]>,
+        method: Variant<string>,
+        'route-data'?: Variant<Record<string, Variant<string>>[]>,
+        'dns'?: Variant<Buffer[]>,
+        'dns-data'?: Variant<{address: Variant<string>}[]>,
+        'gateway'?: Variant<string>,
+        'addr-gen-mode'?: Variant<number>,
+        'ignore-auto-dns'?: Variant<boolean>,
+        'ignore-auto-routes'?: Variant<boolean>,
+        'ip6-privacy'?: Variant<number>,
+    };
     /** https://developer.gnome.org/NetworkManager/stable/settings-proxy.html */
-    proxy: Record<string, Variant<any>>;
+    // proxy: Record<string, Variant<any>>;
     /** https://developer.gnome.org/NetworkManager/stable/settings-802-11-wireless.html */
-    '802-11-wireless'?: Record<string, Variant<any>>;
+    '802-11-wireless'?: {
+        mode: Variant<string>,
+        security?: Variant<string>,
+        'seen-bssids'?: Variant<string[]>,
+        ssid?: Variant<Buffer>,
+        hidden?: Variant<boolean>,
+        band?: Variant<string>,
+        channel?: Variant<number>,
+    };
     /** https://developer.gnome.org/NetworkManager/stable/settings-802-11-wireless-security.html */
-    '802-11-wireless-security'?: Record<string, Variant<any>>;
+    '802-11-wireless-security'?: {
+        'key-mgmt': Variant<string>,
+        'auth-alg'?: Variant<string>,
+        psk?: Variant<string>
+    };
     /** https://developer.gnome.org/NetworkManager/stable/settings-802-3-ethernet.html */
     '802-3-ethernet'?: Record<string, Variant<any>>;
 }
@@ -1011,6 +1043,8 @@ export interface Ip6ConfigProperties extends Properties {
     Gateway: Variant<string>;
     RouteData: Variant<{dest: Variant<string>, prefix: Variant<number>, 'next-hop'?: Variant<string>, metric: Variant<number>}[]>;
     NameserverData?: Variant<{address: Variant<string>}[]>;
+    /** The nameservers in use. Deprecated: use NameserverData */
+    Nameservers: Variant<Buffer[]>;
 }
 
 export type ConnectionProfilePath = string;

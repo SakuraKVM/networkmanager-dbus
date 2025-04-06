@@ -53,3 +53,5 @@ export {
     DevicePath,
     AccessPointPath,
 };
+
+export { Variant } from '@astrohaus/dbus-next';

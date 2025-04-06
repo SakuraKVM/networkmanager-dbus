@@ -39,6 +39,7 @@ export async function call<T = any>(
     methodName: string,
     ...args: any[]
 ): Promise<T> {
+    return await objectInterface[methodName](...args);
     try {
         const result = await objectInterface[methodName](...args);
         return result;
@@ -133,4 +134,38 @@ export function formatIp6Address(input: Buffer) {
         .join(':')
         .replace(/0000\:/g, ':')
         .replace(/:{2,}/, '::');
+}
+
+export function marshalIp4Address(input: string) {
+    const parts = input.split('.').map(Number);
+    if (parts.length !== 4 || parts.some(p => p < 0 || p > 255)) {
+        throw new Error('Invalid IPv4 address');
+    }
+
+    return (parts[3] << 24) | (parts[2] << 16) | (parts[1] << 8) | parts[0];
+}
+
+export function marshalIp6Address(input: string) {
+    const parts = input.split('::');
+
+    let head = parts[0] ? parts[0].split(':') : [];
+    let tail = parts[1] ? parts[1].split(':') : [];
+
+    // 如果有 ::，需要填补中间的零
+    const zeroCount = 8 - (head.length + tail.length);
+    const zeros = new Array(zeroCount).fill('0');
+
+    const fullParts = [...head, ...zeros, ...tail];
+
+    if (fullParts.length !== 8) {
+        throw new Error(`Invalid IPv6 address: ${input}`);
+    }
+
+    // 每个块是 16-bit，要拆成两个 8-bit 字节
+    const bytes = fullParts.flatMap(part => {
+        const value = parseInt(part, 16);
+        return [(value >> 8) & 0xff, value & 0xff];
+    });
+
+    return Buffer.from(bytes);
 }

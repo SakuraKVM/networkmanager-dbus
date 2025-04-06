@@ -31,14 +31,14 @@ export class ConnectionSettingsManager extends Signaler {
         return this._properties;
     }
 
-    private _connectionProfiles: ConnectionProfile[];
-    private _connectionProfilesSubject: BehaviorSubject<ConnectionProfile[]>;
+    private _connectionProfiles: Record<string, ConnectionProfile>;
+    private _connectionProfilesSubject: BehaviorSubject<Record<string, ConnectionProfile>>;
 
     /** Continuously updated saved connection profiles */
-    public connectionProfiles$: Observable<ConnectionProfile[]>;
+    public connectionProfiles$: Observable<Record<string, ConnectionProfile>>;
 
     /** Get a one-time value of the latest saved connection profiles */
-    public get connectionProfiles(): ConnectionProfile[] {
+    public get connectionProfiles(): Record<string, ConnectionProfile> {
         return this._connectionProfiles;
     }
 
